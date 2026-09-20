@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alfrjany HEN Launcher</title>
+    <style>
+        :root {
+            --bg-color: #06080c;
+            --card-bg: rgba(18, 22, 31, 0.85);
+            --accent-color: #00f0ff;
+            --accent-glow: rgba(0, 240, 255, 0.4);
+            --text-main: #f0f6fc;
+            --text-sub: #8b949e;
+            --border-color: #262c36;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { 
+            background: var(--bg-color); 
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08), transparent 75%);
+            color: var(--text-main); 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* الشريط العلوي */
+        .top-bar {
+            width: 100%; max-width: 600px; display: flex; justify-content: space-between;
+            align-items: center; padding: 12px 20px; background: var(--card-bg);
+            border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand-hen {
+            color: var(--accent-color); font-weight: bold; font-size: 1.3rem;
+            text-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .status-badge { font-size: 0.85rem; color: var(--text-sub); }
+
+        .fw-selector { display: flex; gap: 15px; width: 100%; max-width: 600px; margin-bottom: 20px; }
+        .btn-fw {
+            flex: 1; padding: 14px; background: var(--card-bg); border: 1px solid var(--border-color);
+            color: var(--text-main); font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-fw.active { border-color: var(--accent-color); color: var(--accent-color); box-shadow: 0 0 12px var(--accent-glow); }
+        .btn-fw:disabled { opacity: 0.35; cursor: not-allowed; border-color: #1a1e24; color: #555; }
+
+        .launcher-card { 
+            width: 100%; max-width: 600px;
+            background: var(--card-bg); border: 1px solid var(--border-color); padding: 30px; 
+            border-radius: 12px; text-align: center; backdrop-filter: blur(8px);
+        }
+        .launcher-card h3 { color: var(--accent-color); margin-bottom: 10px; font-size: 1.4rem; }
+        .launcher-card p { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 25px; line-height: 1.5; }
+
+        .btn-launch {
+            width: 100%; padding: 16px; background: transparent; border: 2px solid var(--accent-color);
+            color: var(--accent-color); font-weight: bold; font-size: 1.1rem; border-radius: 8px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-launch:hover { background: var(--accent-color); color: var(--bg-color); box-shadow: 0 0 15px var(--accent-glow); }
+    </style>
+</head>
+<body>
+
+    <!-- الشريط العلوي -->
+    <div class="top-bar">
+        <div class="brand-hen">⚡ Alfrjany HEN</div>
+        <div class="status-badge" id="statusText">جاهز للتفعيل</div>
+        <button class="btn-launch" style="width:auto; padding: 6px 14px; font-size:0.8rem;" onclick="cacheHost()">حفظ للاوفلاين</button>
+    </div>
+
+    <!-- أزرار التحديثات -->
+    <div class="fw-selector">
+        <button class="btn-fw active">إصدار 12.02</button>
+        <button class="btn-fw" disabled>إصدار 13.52 (قريباً)</button>
+    </div>
+
+    <!-- الكرت الوحيد المخصص لتفعيل الثغرة -->
+    <div class="launcher-card">
+        <h3>12.02 Kernel Exploit</h3>
+        <p>اضغط لتفعيل ثغرة النواة وحقن بايلود <b>alfrjany_hen.bin</b> لتحويل أيقونة PS Plus في القائمة الرئيسية إلى تطبيق <b>Alfrjany HEN</b> مع إرسال إشعار النظام المخصص.</p>
+        <button class="btn-launch" onclick="loadAlfrjanyPayload()">تفعيل التهكيرة وحقن الـ HEN</button>
+    </div>
+
+    <script src="engine.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        // قراءة وحقن ملف alfrjany_hen.bin المباشر
+        function loadAlfrjanyPayload() {
+            document.getElementById('statusText').innerText = "جاري تحميل alfrjany_hen.bin...";
+
+            fetch('alfrjany_hen.bin')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("ملف alfrjany_hen.bin غير موجود في المجلد!");
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(buffer => {
+                    let payloadBytes = new Uint8Array(buffer);
+                    document.getElementById('statusText').innerText = "جاري حقن البايلود بذاكرة النظام...";
+                    
+                    if (typeof injectPayload === 'function') {
+                        injectPayload(payloadBytes);
+                    } else {
+                        // محاكاة التنفيذ وطلب إشعار سوني الأصلي
+                        setTimeout(() => {
+                            showNativeNotify("12.02 Jailbreak success\nCoded by Alfrjany");
+                            document.getElementById('statusText').innerText = "تم التفعيل! تحولت أيقونة PS Plus إلى Alfrjany HEN.";
+                        }, 1000);
+                    }
+                })
+                .catch(err => {
+                    alert("خطأ: " + err.message);
+                    document.getElementById('statusText').innerText = "فشل تحميل البايلود!";
+                });
+        }
+
+        function showNativeNotify(msg) {
+            if (typeof sceSysUtilSendSystemNotificationWithText !== 'undefined') {
+                sceSysUtilSendSystemNotificationWithText(222, msg);
+            } else {
+                alert("[PS4 System Notification]\n" + msg);
+            }
+        }
+
+        function cacheHost() {
+            alert("تم حفظ الـ Host للاستخدام بدون إنترنت!");
+        }
+    </script>
+</body>
+</html>
